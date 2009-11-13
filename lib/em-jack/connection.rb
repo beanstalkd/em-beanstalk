@@ -34,9 +34,12 @@ module EMJack
       end
     end
     
-    def drain!
+    def drain!(&block)
       stats do |stats|
-        p stats['available-jobs']
+        p stats
+        stats['current-jobs-ready'].zero? ?
+          EM.next_tick(&block) :
+          reserve{|job| job.delete{ drain!(&block) }}
       end
     end
     

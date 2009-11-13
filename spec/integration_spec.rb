@@ -40,6 +40,21 @@ describe EMJack::Connection, "integration" do
     end
   end
 
+  it "should drain the queue" do
+    conn = EMJack::Connection.new
+    conn.put('myjob')
+    conn.put('myjob')
+    conn.put('myjob')
+    conn.put('myjob')
+    conn.put('myjob')
+    conn.drain!{
+      conn.stats do |stats|
+        stats['current-jobs-ready'].should == 0
+        done
+      end
+    }
+  end
+
   it 'should default the delay, priority and ttr settings' do
     conn = EMJack::Connection.new
     conn.put('myjob') do
