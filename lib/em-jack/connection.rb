@@ -62,8 +62,12 @@ module EMJack
       add_deferrable(&block)
     end
 
-    def reserve(&block)
-      @conn.send(:reserve)
+    def reserve(timeout = nil, &block)
+      if timeout
+        @conn.send(:'reserve-with-timeout', timeout)
+      else
+        @conn.send(:reserve)
+      end
       add_deferrable(&block)
     end
 
@@ -113,6 +117,7 @@ module EMJack
       add_deferrable(&block)
     end
     
+<<<<<<< HEAD
     def put(msg, opts = nil, &block)
       case msg
       when Job
@@ -125,6 +130,20 @@ module EMJack
         delay = opts && opts[:delay] || default_delay
         ttr = opts && opts[:ttr] || default_ttr
         body = msg.to_s
+=======
+    def release(job)
+      return if job.nil?
+      @conn.send(:release, job.jobid, 0, 0)
+      add_deferrable
+    end
+    
+    def put(msg, opts = {})
+      pri = (opts[:priority] || 65536).to_i
+      if pri< 0
+         pri = 65536
+      elsif pri > (2 ** 32)
+        pri = 2 ** 32
+>>>>>>> 6a28a7a757ba285a8de8623dc737ee26fa7eeb95
       end
       
       priority = default_priority if priority < 0
@@ -151,11 +170,21 @@ module EMJack
 
     def add_deferrable(&block)
       df = EM::DefaultDeferrable.new
-      df.errback { |err| puts "ERROR: #{err}" }
+      df.errback do |err|
+        if @error_callback
+          @error_callback.call(err)
+        else
+          puts "ERROR: #{err}"
+        end
+      end
       
       @deferrables.push(df)
       df.callback(&block) if block
       df
+    end
+  
+    def on_error(&block)
+      @error_callback = block
     end
   
     def received(data)
@@ -189,6 +218,10 @@ module EMJack
         when /^INSERTED\s+(\d+)\r\n/ then
           df = @deferrables.shift
           df.succeed($1.to_i)
+
+        when /^RELEASED\r\n/ then
+          df = @deferrables.shift
+          df.succeed
 
         when /^BURIED\s+(\d+)\r\n/ then
           df = @deferrables.shift
