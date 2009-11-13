@@ -117,7 +117,6 @@ module EMJack
       add_deferrable(&block)
     end
     
-<<<<<<< HEAD
     def put(msg, opts = nil, &block)
       case msg
       when Job
@@ -130,20 +129,6 @@ module EMJack
         delay = opts && opts[:delay] || default_delay
         ttr = opts && opts[:ttr] || default_ttr
         body = msg.to_s
-=======
-    def release(job)
-      return if job.nil?
-      @conn.send(:release, job.jobid, 0, 0)
-      add_deferrable
-    end
-    
-    def put(msg, opts = {})
-      pri = (opts[:priority] || 65536).to_i
-      if pri< 0
-         pri = 65536
-      elsif pri > (2 ** 32)
-        pri = 2 ** 32
->>>>>>> 6a28a7a757ba285a8de8623dc737ee26fa7eeb95
       end
       
       priority = default_priority if priority < 0
@@ -155,6 +140,12 @@ module EMJack
       add_deferrable(&block)
     end
   
+    def release(job, &block)
+      return if job.nil?
+      @conn.send(:release, job.jobid, 0, 0)
+      add_deferrable(&block)
+    end
+
     def connected
       @retries = 0
     end
