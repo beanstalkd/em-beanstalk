@@ -1,23 +1,30 @@
 module EMJack
   class Job
-    attr_accessor :jobid, :body, :ttr, :conn
     
-    def initialize(conn, jobid, body)
+    attr_reader :id, :conn
+    attr_accessor :body, :ttr, :priority, :delay
+    
+    def initialize(conn, id, body)
       @conn = conn
-      @jobid = jobid.to_i
+      @id = id && Integer(id)
       @body = body
+      @priority = conn && conn.default_priority
+      @delay = conn && conn.default_delay
+      @ttr = conn && conn.default_ttr
     end
     
-    def delete
-      @conn.delete(self)
+    alias_method :jobid, :id
+    
+    def delete(&block)
+      conn.delete(self, &block)
     end
     
-    def stats
-      @conn.stats(:job, self)
+    def stats(&block)
+      conn.stats(:job, self, &block)
     end
 
     def to_s
-      "#{@jobid} -- #{body.inspect}"
+      "#{id} -- #{body.inspect}"
     end
   end
 end

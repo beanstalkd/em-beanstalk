@@ -15,34 +15,28 @@ are no available jobs.
 = Dependencies
  - EventMachine
  - RSpec  (to run the tests)
+ - EM::Spec
 
 = Examples
   EM.run {
     jack = EMJack::Connection.new
   
-    r = jack.use('mytube')
-    r.callback { |tube| puts "Using #{tube}" }
+    jack.use('mytube') { |tube| puts "Using #{tube}" }
   
-    r = jack.reserve
-    r.callback do |job|
-      puts job.jobid
+    jack.reserve do |job|
+      puts job.id
       process(job)
       
-      r2 = jack.delete(job)
-      r2.callback { puts "Successfully deleted" }
+      jack.delete(job) { puts "Successfully deleted" }
     end
   
-    r = jack.put("my message", :ttr => 300)
-    r.callback { |jobid| puts "put successful #{jobid}" }
+    jack.put("my message", :ttr => 300) { |id| puts "put successful #{id}" }
   
-    r = jack.stats
-    r.callback { |stats| puts "Server up for #{stats['uptime']} seconds" "}
+    jack.stats { |stats| puts "Server up for #{stats['uptime']} seconds" "}
     
-    r = jack.stats(:tube, "mytube")
-    r.callback { |stats| puts "Total jobs #{stats['total-jobs']}" }
+    jack.stats(:tube, "mytube") { |stats| puts "Total jobs #{stats['total-jobs']}" }
     
-    r = jack.list(:tubes)
-    r.callback { |tubes| puts "There are #{tubes.length} tubes defined" }
+    jack.list(:tubes) { |tubes| puts "There are #{tubes.length} tubes defined" }
   }
 
 
@@ -56,12 +50,12 @@ are no available jobs.
       jack = EMJack::Connection.new
 
       jack.each_job do |job|
-        puts "Got job ##{job.jobid}: #{job}"
+        puts "Got job ##{job.id}: #{job}"
 
         if process(job)
-          r = jack.delete(job)
-          r.callback { puts "*Deleted #{job}*" }
+          jack.delete(job) { puts "*Deleted #{job}*" }
         else
+          # something went horribly wrong!
         end
       end
 

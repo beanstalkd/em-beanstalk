@@ -1,9 +1,4 @@
-$:.unshift(File.join(File.dirname(__FILE__), "..", "lib"))
-
-require 'rubygems'
-require 'spec'
-
-require 'em-jack'
+require 'spec/spec_helper'
 
 describe EMJack::Connection do
   before(:each) do
@@ -171,7 +166,7 @@ describe EMJack::Connection do
   %w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
      UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
      TIMED_OUT NOT_FOUND).each do |cmd|
-    it 'should handle #{cmd} messages' do
+    it "should handle #{cmd} messages" do
        conn = EMJack::Connection.new
 
        df = conn.add_deferrable
