@@ -6,7 +6,7 @@ require 'em-jack'
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |s|
-    s.name = "em-jack"
+    s.name = "em-beanstalk"
     s.description = s.summary = "EventMachine client for Beanstalkd"
     s.email = "dan@postrank.com"
     s.homepage = "http://github.com/joshbuddy/em-jack"
