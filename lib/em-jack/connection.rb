@@ -36,7 +36,6 @@ module EMJack
     
     def drain!(&block)
       stats do |stats|
-        p stats
         stats['current-jobs-ready'].zero? ?
           EM.next_tick(&block) :
           reserve{|job| job.delete{ drain!(&block) }}
@@ -74,9 +73,9 @@ module EMJack
       add_deferrable(&block)
     end
 
-    def each_job(&block)
+    def each_job(timeout = nil, &block)
       work = Proc.new do
-        r = reserve
+        r = reserve(timeout)
         r.callback do |job|
           block.call(job)
           EM.next_tick { work.call }
@@ -108,7 +107,7 @@ module EMJack
       case(type)
       when nil then @conn.send(:'list-tubes')
       when :use, :used then @conn.send(:'list-tube-used')
-      when :watched then @conn.send(:'list-tubes-watched')
+      when :watch, :watched then @conn.send(:'list-tubes-watched')
       else raise EMJack::InvalidCommand.new
       end
       add_deferrable(&block)
