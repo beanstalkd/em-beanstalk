@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Dan"]
-  s.date = %q{2009-11-13}
+  s.date = %q{2009-11-20}
   s.description = %q{EventMachine client for Beanstalkd}
   s.email = %q{dan@postrank.com}
   s.extra_rdoc_files = [
