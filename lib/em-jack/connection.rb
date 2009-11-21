@@ -15,9 +15,10 @@ module EMJack
       @default_priority = opts && opts[:default_priority] || 65536
       @default_delay = opts && opts[:default_delay] || 0
       @default_ttr = opts && opts[:default_ttr] || 300
+      @default_timeout = opts && opts[:timeout] || 5
       
       @used_tube = 'default'
-      @watched_tubes = ['default']
+      @watched_tubes = [@used_tube]
       
       @data = ""
       @retries = 0
@@ -26,12 +27,19 @@ module EMJack
       
       @conn = EM::connect(host, port, EMJack::BeanstalkConnection) do |conn|
         conn.client = self
+        conn.comm_inactivity_timeout = 0
+        conn.pending_connect_timeout = @default_timeout
       end
       
       unless @tube.nil?
         use(@tube)
         watch(@tube)
       end
+    end
+    
+    def close
+      @disconnect_manually = true
+      @conn.close_connection
     end
     
     def drain!(&block)
@@ -153,21 +161,26 @@ module EMJack
     end
 
     def disconnected
-      # XXX I think I need to run out the deferrables as failed here
-      # since the connection was dropped
+      @deferrables.each {|d| d.fail }
+      unless @disconnect_manually
+        raise EMJack::Disconnected if @retries >= @retry_count
+        @retries += 1
+        EM.add_timer(1) { reconnect }
+      end
+    end
 
-      raise EMJack::Disconnected if @retries >= @retry_count
-      @retries += 1
-      EM.add_timer(1) { @conn.reconnect(host, port) }
+    def reconnect
+      @disconnect_manually = false
+      @conn.reconnect(host, port)
     end
 
     def add_deferrable(&block)
       df = EM::DefaultDeferrable.new
-      df.errback do |err|
+      df.errback do
         if @error_callback
-          @error_callback.call(err)
+          @error_callback.call
         else
-          puts "ERROR: #{err}"
+          puts "ERROR"
         end
       end
       
