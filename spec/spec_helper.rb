@@ -1,14 +1,3 @@
-libdir = File.expand_path("lib")
-$:.unshift(libdir) unless $:.include?(libdir)
-
-require 'em-jack'
-#require 'rubygems'
+require File.join(File.dirname(__FILE__), '..', 'lib', 'em-beanstalk')
 require "em-spec/rspec"
 
-#def with_connection(*args)
-#  EM.run do
-#    yield EMJack::Connection.new(*args)
-#    EM.stop
-#  end
-  
-#end

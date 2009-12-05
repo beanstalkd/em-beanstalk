@@ -1,17 +1,17 @@
 require 'spec/spec_helper'
 
-describe EMJack::Connection, "integration" do
+describe EM::Beanstalk, "integration" do
   include EM::Spec
 
   it 'should use a default host of "localhost" and port of 11300' do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     conn.host.should == 'localhost'
     conn.port.should == 11300    
     done
   end
 
   it 'should watch and use a provided tube on connect' do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     conn.watch('my-lovely-tube') do 
       conn.list(:watched) do |watched|
         watched.should include("my-lovely-tube")
@@ -21,7 +21,7 @@ describe EMJack::Connection, "integration" do
   end
 
   it 'should send the "use" command' do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     conn.use('my-lovely-tube') do 
       conn.list(:used) do |used|
         used.should include("my-lovely-tube")
@@ -31,7 +31,7 @@ describe EMJack::Connection, "integration" do
   end
   
   it "should put a job" do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     conn.put('myjob') do
       conn.reserve do |job|
         job.body.should == 'myjob'
@@ -41,7 +41,7 @@ describe EMJack::Connection, "integration" do
   end
 
   it "should drain the queue" do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     conn.put('myjob')
     conn.put('myjob')
     conn.put('myjob')
@@ -56,7 +56,7 @@ describe EMJack::Connection, "integration" do
   end
 
   it 'should default the delay, priority and ttr settings' do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     conn.put('myjob') do
       conn.reserve do |job|
         job.delay.should == conn.default_delay
@@ -68,7 +68,7 @@ describe EMJack::Connection, "integration" do
   end
   
   it 'should accept a delay setting' do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     start = Time.new.to_f
     conn.put('mydelayedjob', :delay => 3) do |id|
       conn.reserve do |job|
@@ -80,13 +80,13 @@ describe EMJack::Connection, "integration" do
   end
   
   it 'should accept a ttr setting' do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     conn.put('mydelayedjob', :ttr => 1) do |id|
       
       conn.reserve do |job|
         job.id.should == id
         EM.add_timer(3) do
-          conn2 = EMJack::Connection.new
+          conn2 = EM::Beanstalk.new
           conn2.reserve do |job2|
             job2.id.should == id
             job2.delete { done }
@@ -97,7 +97,7 @@ describe EMJack::Connection, "integration" do
   end
   
   it 'should accept a priority setting' do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     conn.put('myhighpriorityjob', :priority => 800) do |low_id|
       conn.put('myhighpriorityjob', :priority => 300) do |high_id|
         conn.reserve do |job|
@@ -109,7 +109,7 @@ describe EMJack::Connection, "integration" do
   end
   
   it 'should handle a non-string provided as the put message' do
-    conn = EMJack::Connection.new
+    conn = EM::Beanstalk.new
     conn.put(22) do |id|
       conn.reserve do |job|
         job.body.should == '22'
@@ -120,45 +120,45 @@ describe EMJack::Connection, "integration" do
   #
   #it 'should send the "delete" command' do
   #  @connection_mock.should_receive(:send).once.with(:delete, 1)
-  #  job = EMJack::Job.new(nil, 1, "body")
-  #  conn = EMJack::Connection.new
+  #  job = EM::Beanstalk::Job.new(nil, 1, "body")
+  #  conn = EM::Beanstalk.new
   #  conn.delete(job)
   #end
   #
   #it 'should handle a nil job sent to the "delete" command' do
   #  @connection_mock.should_not_receive(:send).with(:delete, nil)
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  conn.delete(nil)
   #end
   #
   #it 'should send the "reserve" command' do
   #  @connection_mock.should_receive(:send).with(:reserve)
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  conn.reserve
   #end
   #
   #it 'should raise exception if reconnect fails more then RETRY_COUNT times' do
   #  EM.should_receive(:add_timer).exactly(5).times
   #
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  5.times { conn.disconnected }
-  #  lambda { conn.disconnected }.should raise_error(EMJack::Disconnected)
+  #  lambda { conn.disconnected }.should raise_error(EM::Beanstalk::Disconnected)
   #end
   #
   #it 'should reset the retry count on connection' do
   #  EM.should_receive(:add_timer).at_least(1).times
   #
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  5.times { conn.disconnected }
   #  conn.connected
-  #  lambda { conn.disconnected }.should_not raise_error(EMJack::Disconnected)
+  #  lambda { conn.disconnected }.should_not raise_error(EM::Beanstalk::Disconnected)
   #end
   #
   #%w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
   #   UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
   #   TIMED_OUT NOT_FOUND).each do |cmd|
   #  it "should handle #{cmd} messages" do
-  #     conn = EMJack::Connection.new
+  #     conn = EM::Beanstalk.new
   #
   #     df = conn.add_deferrable
   #     df.should_receive(:fail).with(cmd.downcase.to_sym)
@@ -168,7 +168,7 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should handle deleted messages' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  df = conn.add_deferrable
   #  df.should_receive(:succeed)
@@ -177,7 +177,7 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should handle inserted messages' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  df = conn.add_deferrable
   #  df.should_receive(:succeed).with(40)
@@ -186,7 +186,7 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should handle buried messages' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  df = conn.add_deferrable
   #  df.should_receive(:fail).with(:buried, 40)
@@ -195,7 +195,7 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should handle using messages' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  df = conn.add_deferrable
   #  df.should_receive(:succeed).with("mytube")
@@ -204,7 +204,7 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should handle watching messages' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  df = conn.add_deferrable
   #  df.should_receive(:succeed).with(24)
@@ -213,13 +213,13 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should handle reserved messages' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  msg = "This is my message"
   #
   #  df = conn.add_deferrable
   #  df.should_receive(:succeed).with do |job|
-  #    job.class.should == EMJack::Job
+  #    job.class.should == EM::Beanstalk::Job
   #    job.id.should == 42
   #    job.body.should == msg
   #  end
@@ -228,7 +228,7 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should handle receiving multiple replies in one packet' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  df = conn.add_deferrable
   #  df.should_receive(:succeed).with(24)
@@ -240,7 +240,7 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should handle receiving data in chunks' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  
   #  msg1 = "First half of the message\r\n"
   #  msg2 = "Last half of the message"
@@ -256,12 +256,12 @@ describe EMJack::Connection, "integration" do
   #
   #it 'should send the stat command' do
   #  @connection_mock.should_receive(:send).once.with(:stats)
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  conn.stats
   #end
   #
   #it 'should handle receiving the OK command' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  msg =<<-HERE
 #---
@@ -289,51 +289,51 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should support job stats' do
-  #  job = EMJack::Job.new(nil, 42, "blah")
+  #  job = EM::Beanstalk::Job.new(nil, 42, "blah")
   #
   #  @connection_mock.should_receive(:send).once.with(:'stats-job', 42)
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  conn.stats(:job, job)
   #end
   #
   #it 'should support tube stats' do
   #  @connection_mock.should_receive(:send).once.with(:'stats-tube', "mytube")
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  conn.stats(:tube, "mytube")
   #end
   #
   #it 'should throw exception on invalid stats command' do
   #  @connection_mock.should_not_receive(:send)
-  #  conn = EMJack::Connection.new
-  #  lambda { conn.stats(:blah) }.should raise_error(EMJack::InvalidCommand)
+  #  conn = EM::Beanstalk.new
+  #  lambda { conn.stats(:blah) }.should raise_error(EM::Beanstalk::InvalidCommand)
   #end
   #
   #it 'should support listing tubes' do
   #  @connection_mock.should_receive(:send).once.with(:'list-tubes')
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  conn.list
   #end
   #
   #it 'should support listing tube used' do
   #  @connection_mock.should_receive(:send).once.with(:'list-tube-used')
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  conn.list(:used)
   #end
   #
   #it 'should support listing tubes watched' do
   #  @connection_mock.should_receive(:send).once.with(:'list-tubes-watched')
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #  conn.list(:watched)
   #end
   #
   #it 'should throw exception on invalid list command' do
   #  @connection_mock.should_not_receive(:send)
-  #  conn = EMJack::Connection.new
-  #  lambda { conn.list(:blah) }.should raise_error(EMJack::InvalidCommand)
+  #  conn = EM::Beanstalk.new
+  #  lambda { conn.list(:blah) }.should raise_error(EM::Beanstalk::InvalidCommand)
   #end
   #
   #it 'should accept a response broken over multiple packets' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  msg1 = "First half of the message\r\n"
   #  msg2 = "Last half of the message"
@@ -349,7 +349,7 @@ describe EMJack::Connection, "integration" do
   #end
   #
   #it 'should accept a response broken over multiple packets' do
-  #  conn = EMJack::Connection.new
+  #  conn = EM::Beanstalk.new
   #
   #  msg1 = "First half of the message\r\n"
   #  msg2 = "Last half of the message"

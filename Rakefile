@@ -1,8 +1,6 @@
 libdir = File.expand_path("lib")
 $:.unshift(libdir) unless $:.include?(libdir)
 
-require 'em-jack'
-
 begin
   require 'jeweler'
   Jeweler::Tasks.new do |s|

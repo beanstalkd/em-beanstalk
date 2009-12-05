@@ -1,12 +1,24 @@
 require 'eventmachine'
 require 'yaml'
 
-module EMJack
-  class Connection
+$LOAD_PATH << File.expand_path(File.dirname(__FILE__))
+
+require 'em-beanstalk/job'
+require 'em-beanstalk/connection'
+
+module EM
+  class Beanstalk
+
+    Disconnected   = Class.new(RuntimeError)
+    InvalidCommand = Class.new(RuntimeError)
+
+    module VERSION
+      STRING = File.read(File.join(File.dirname(__FILE__), '..', 'VERSION'))
+    end
 
     attr_accessor :host, :port
     attr_reader :default_priority, :default_delay, :default_ttr
-    
+  
     def initialize(opts = nil)
       @host = opts && opts[:host] || 'localhost'
       @port = opts && opts[:port] || 11300
@@ -16,32 +28,32 @@ module EMJack
       @default_delay = opts && opts[:default_delay] || 0
       @default_ttr = opts && opts[:default_ttr] || 300
       @default_timeout = opts && opts[:timeout] || 5
-      
+    
       @used_tube = 'default'
       @watched_tubes = [@used_tube]
-      
+    
       @data = ""
       @retries = 0
       @in_reserve = false
       @deferrables = []
-      
-      @conn = EM::connect(host, port, EMJack::BeanstalkConnection) do |conn|
+    
+      @conn = EM::connect(host, port, EM::Beanstalk::Connection) do |conn|
         conn.client = self
         conn.comm_inactivity_timeout = 0
         conn.pending_connect_timeout = @default_timeout
       end
-      
+    
       unless @tube.nil?
         use(@tube)
         watch(@tube)
       end
     end
-    
+  
     def close
       @disconnect_manually = true
       @conn.close_connection
     end
-    
+  
     def drain!(&block)
       stats do |stats|
         stats['current-jobs-ready'].zero? ?
@@ -49,22 +61,22 @@ module EMJack
           reserve{|job| job.delete{ drain!(&block) }}
       end
     end
-    
+  
     def use(tube, &block)
       return if @used_tube == tube
       @used_tube = tube
       @conn.send(:use, tube)
       add_deferrable(&block)
-      
-    end
     
+    end
+  
     def watch(tube, &block)
       return if @watched_tubes.include?(tube)
       @watched_tubes.push(tube)
       @conn.send(:watch, tube)
       add_deferrable(&block)
     end
-    
+  
     def ignore(tube, &block)
       return if not @watched_tubes.include?(tube)
       @watched_tubes.delete(tube)
@@ -97,7 +109,7 @@ module EMJack
       when nil then @conn.send(:stats)
       when :tube then @conn.send(:'stats-tube', val)
       when :job then @conn.send(:'stats-job', job_id(val))
-      else raise EMJack::InvalidCommand.new
+      else raise EM::Beanstalk::InvalidCommand.new
       end
       add_deferrable(&block)
     end
@@ -110,13 +122,13 @@ module EMJack
         val
       end
     end
-    
+  
     def list(type = nil, &block)
       case(type)
       when nil then @conn.send(:'list-tubes')
       when :use, :used then @conn.send(:'list-tube-used')
       when :watch, :watched then @conn.send(:'list-tubes-watched')
-      else raise EMJack::InvalidCommand.new
+      else raise EM::Beanstalk::InvalidCommand.new
       end
       add_deferrable(&block)
     end
@@ -126,7 +138,7 @@ module EMJack
       @conn.send(:delete, job_id(val))
       add_deferrable(&block)
     end
-    
+  
     def put(msg, opts = nil, &block)
       case msg
       when Job
@@ -140,16 +152,16 @@ module EMJack
         ttr = opts && opts[:ttr] || default_ttr
         body = msg.to_s
       end
-      
+    
       priority = default_priority if priority < 0
       priority = 2 ** 32 if priority > (2 ** 32)
       delay = default_delay if delay < 0
       ttr = default_ttr if ttr < 0
-      
+    
       @conn.send_with_data(:put, body, priority, delay, ttr, body.size)
       add_deferrable(&block)
     end
-  
+
     def release(job, &block)
       return if job.nil?
       @conn.send(:release, job.jobid, 0, 0)
@@ -163,7 +175,7 @@ module EMJack
     def disconnected
       @deferrables.each {|d| d.fail }
       unless @disconnect_manually
-        raise EMJack::Disconnected if @retries >= @retry_count
+        raise EM::Beanstalk::Disconnected if @retries >= @retry_count
         @retries += 1
         EM.add_timer(1) { reconnect }
       end
@@ -183,16 +195,16 @@ module EMJack
           puts "ERROR"
         end
       end
-      
+    
       @deferrables.push(df)
       df.callback(&block) if block
       df
     end
-  
+
     def on_error(&block)
       @error_callback = block
     end
-  
+
     def received(data)
       @data << data
 
@@ -201,7 +213,7 @@ module EMJack
         break if idx.nil?
 
         first = $1
-        
+      
         handled = false
         %w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
            UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
@@ -259,7 +271,7 @@ module EMJack
           break if body.nil?
 
           df = @deferrables.shift
-          job = EMJack::Job.new(self, id, body)
+          job = EM::Beanstalk::Job.new(self, id, body)
           df.succeed(job)
           next
         else
@@ -268,7 +280,7 @@ module EMJack
         @data.slice!(0, first.size)
       end
     end
-    
+  
     def extract_body(bytes, data)
       rem = data[(data.index(/\r\n/) + 2)..-1]
       return [nil, data] if rem.length < bytes
