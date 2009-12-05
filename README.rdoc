@@ -64,11 +64,3 @@ are no available jobs.
         # Some kind of job processing
       end
     }
-
-
-= Contact
-If you've got any questions, comments or bugs, please let me know. You can
-contact me by email at dj2 at everburning dot com.
-
-= Contributors
-Peter Kieltyka (EM::Beanstalk#each_job)
