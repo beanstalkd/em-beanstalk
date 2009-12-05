@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{em-beanstalk}
-  s.version = "0.0.3"
+  s.version = "0.0.4"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Dan"]
-  s.date = %q{2009-11-20}
+  s.date = %q{2009-12-04}
   s.description = %q{EventMachine client for Beanstalkd}
   s.email = %q{dan@postrank.com}
   s.extra_rdoc_files = [
@@ -17,19 +17,17 @@ Gem::Specification.new do |s|
   ]
   s.files = [
     "COPYING",
-     "README.rdoc",
-     "Rakefile",
-     "VERSION",
-     "lib/em-jack.rb",
-     "lib/em-jack/beanstalk_connection.rb",
-     "lib/em-jack/connection.rb",
-     "lib/em-jack/errors.rb",
-     "lib/em-jack/job.rb",
-     "spec/connection_spec.rb",
-     "spec/integration_spec.rb",
-     "spec/job_spec.rb",
-     "spec/spec.opts",
-     "spec/spec_helper.rb"
+    "README.rdoc",
+    "Rakefile",
+    "VERSION",
+    "lib/em-beanstalk.rb",
+    "lib/em-beanstalk/connection.rb",
+    "lib/em-beanstalk/job.rb",
+    "spec/connection_spec.rb",
+    "spec/integration_spec.rb",
+    "spec/job_spec.rb",
+    "spec/spec.opts",
+    "spec/spec_helper.rb"
   ]
   s.homepage = %q{http://github.com/joshbuddy/em-jack}
   s.rdoc_options = ["--charset=UTF-8"]
@@ -38,9 +36,9 @@ Gem::Specification.new do |s|
   s.summary = %q{EventMachine client for Beanstalkd}
   s.test_files = [
     "spec/connection_spec.rb",
-     "spec/integration_spec.rb",
-     "spec/job_spec.rb",
-     "spec/spec_helper.rb"
+    "spec/integration_spec.rb",
+    "spec/job_spec.rb",
+    "spec/spec_helper.rb"
   ]
 
   if s.respond_to? :specification_version then
