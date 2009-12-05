@@ -125,9 +125,9 @@ module EM
   
     def list(type = nil, &block)
       case(type)
-      when nil then @conn.send(:'list-tubes')
-      when :use, :used then @conn.send(:'list-tube-used')
-      when :watch, :watched then @conn.send(:'list-tubes-watched')
+      when :tube, :tubes, nil then @conn.send(:'list-tubes')
+      when :use, :used        then @conn.send(:'list-tube-used')
+      when :watch, :watched   then @conn.send(:'list-tubes-watched')
       else raise EM::Beanstalk::InvalidCommand.new
       end
       add_deferrable(&block)
