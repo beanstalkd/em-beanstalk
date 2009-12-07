@@ -110,10 +110,10 @@ module EM
 
     def stats(type = nil, val = nil, &block)
       case(type)
-      when nil then @conn.send(:stats)
-      when :tube then @conn.send(:'stats-tube', val)
-      when :job then @conn.send(:'stats-job', job_id(val))
-      else raise EM::Beanstalk::InvalidCommand.new
+      when nil        then @conn.send(:stats)
+      when :tube      then @conn.send(:'stats-tube', val)
+      when :job       then @conn.send(:'stats-job', job_id(val))
+      else                 raise EM::Beanstalk::InvalidCommand.new
       end
       add_deferrable(&block)
     end
@@ -132,7 +132,7 @@ module EM
       when :tube, :tubes, nil then @conn.send(:'list-tubes')
       when :use, :used        then @conn.send(:'list-tube-used')
       when :watch, :watched   then @conn.send(:'list-tubes-watched')
-      else raise EM::Beanstalk::InvalidCommand.new
+      else                         raise EM::Beanstalk::InvalidCommand.new
       end
       add_deferrable(&block)
     end
@@ -142,7 +142,17 @@ module EM
       @conn.send(:delete, job_id(val))
       add_deferrable(&block)
     end
-  
+    
+    def peek(id, &block)
+      case id
+      when :ready    then @conn.send(:'peek-ready')
+      when :delayed  then @conn.send(:'peek-delayed')
+      when :buried   then @conn.send(:'peek-buried')
+      else                @conn.send(:'peek', id)
+      end
+      add_deferrable(&block)
+    end
+    
     def put(msg, opts = nil, &block)
       case msg
       when Job
@@ -201,7 +211,6 @@ module EM
     end
 
     def received(data)
-      puts "received: #{data.inspect}"
       @data << data
       
       until @data.empty?
@@ -239,9 +248,9 @@ module EM
           else
             break
           end
-        when /^RESERVED\s+(\d+)\s+(\d+)/
-          id = $1.to_i
-          bytes = $2.to_i
+        when /^(RESERVED|FOUND)\s+(\d+)\s+(\d+)/
+          id = $2.to_i
+          bytes = $3.to_i
           if body = extract_body(bytes, @data)
             @data = body.data
             df = @deferrables.shift

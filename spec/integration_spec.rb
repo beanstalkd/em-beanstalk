@@ -50,6 +50,16 @@ describe EM::Beanstalk, "integration" do
     end
   end
 
+  it "should peek a job" do
+    conn = EM::Beanstalk.new
+    conn.put('myjob') do |id|
+      conn.peek(id) do |job|
+        job.body.should == 'myjob'
+        job.delete { done }
+      end
+    end
+  end
+
   it "should drain the queue" do
     conn = EM::Beanstalk.new
     conn.put('myjob')
@@ -65,6 +75,18 @@ describe EM::Beanstalk, "integration" do
     }
   end
 
+  it 'should default the delay, priority and ttr settings' do
+    conn = EM::Beanstalk.new
+    conn.put('myjob') do
+      conn.reserve do |job|
+        job.delay.should == conn.default_delay
+        job.ttr.should == conn.default_ttr
+        job.priority.should == conn.default_priority
+        job.delete { done }
+      end
+    end
+  end
+  
   it 'should default the delay, priority and ttr settings' do
     conn = EM::Beanstalk.new
     conn.put('myjob') do

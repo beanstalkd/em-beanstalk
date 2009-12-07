@@ -25,7 +25,7 @@ module EM
       
       protected
       def real_send(command, args, data = nil)
-        send_data(command.to_s)
+        send_data(command.to_s.downcase)
         args.each{ |a| send_data(' '); send_data(a) }
         send_data("\r\n")
         if data

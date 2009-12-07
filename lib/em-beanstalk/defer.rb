@@ -1,15 +1,17 @@
 module EventMachine
   class Beanstalk
     class Defer < EM::DefaultDeferrable
-      def initialize(default_error_callback = nil, &block)
-        errback(&default_error_callback) if default_error_callback
+      def initialize(default_error_callback, &block)
+        @error = default_error_callback
         callback(&block) if block
+        errback {|message| @error.call(message)}
       end
       
       def error(&block)
-        errback(&block)
+        @error = block
         self
       end
+      
     end
   end
 end

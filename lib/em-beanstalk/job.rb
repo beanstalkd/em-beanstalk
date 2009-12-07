@@ -27,6 +27,7 @@ module EM
       def to_s
         "#{id} -- #{body.inspect}"
       end
+      
     end
   end
 end
