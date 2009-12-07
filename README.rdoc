@@ -13,12 +13,14 @@ any of the commands that come after the reserve until the reserve completes.
 This is a bit of a gotcha when sending a series of reserve, delete, etc and there
 are no available jobs.
 
-= Dependencies
- - EventMachine
- - RSpec  (to run the tests)
- - EM::Spec
+== Dependencies
+ - eventmachine
 
-= Examples
+=== For testing
+ - rspec
+ - em-spec
+
+== Examples
   EM.run {
     jack = EM::Beanstalk.new
   
@@ -40,27 +42,40 @@ are no available jobs.
     jack.list(:tubes) { |tubes| puts "There are #{tubes.length} tubes defined" }
   }
 
+If you need custom error handling, you can chain the error event handler
 
-  EM::Beanstalk#each_job is useful for scenarios where the client is a job worker 
-  and intended to process jobs continuously as they become available. Once 
-  the queue is empty, the client will block and wait for a new job.
+== Examples
+EM.run {
+  jack = EM::Beanstalk.new
 
-  If multiple workers connect to the queue Beanstalkd will round-robin between
-  the workers.
-    EM.run {
-      jack = EM::Beanstalk.new
+  jack.delete(job_id) {
+    puts "deleted job!"
+  }.error {|message|
+    puts "I couldn't delete the job because of #{message}"
+  }
+}
 
-      jack.each_job do |job|
-        puts "Got job ##{job.id}: #{job}"
+EM::Beanstalk#each_job is useful for scenarios where the client is a job worker 
+and intended to process jobs continuously as they become available. Once 
+the queue is empty, the client will block and wait for a new job.
 
-        if process(job)
-          jack.delete(job) { puts "*Deleted #{job}*" }
-        else
-          # something went horribly wrong!
-        end
+If multiple workers connect to the queue Beanstalkd will round-robin between
+the workers.
+
+  EM.run {
+    jack = EM::Beanstalk.new
+
+    jack.each_job do |job|
+      puts "Got job ##{job.id}: #{job}"
+
+      if process(job)
+        jack.delete(job) { puts "*Deleted #{job}*" }
+      else
+        # something went horribly wrong!
       end
+    end
 
-      def process(job)
-        # Some kind of job processing
-      end
-    }
+    def process(job)
+      # Some kind of job processing
+    end
+  }

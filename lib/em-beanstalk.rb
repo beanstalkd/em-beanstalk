@@ -4,6 +4,7 @@ require 'yaml'
 $LOAD_PATH << File.expand_path(File.dirname(__FILE__))
 
 require 'em-beanstalk/job'
+require 'em-beanstalk/defer'
 require 'em-beanstalk/connection'
 
 module EM
@@ -12,23 +13,26 @@ module EM
     Disconnected   = Class.new(RuntimeError)
     InvalidCommand = Class.new(RuntimeError)
 
+    Body = Struct.new(:body, :data)
+    
     module VERSION
       STRING = File.read(File.join(File.dirname(__FILE__), '..', 'VERSION'))
     end
 
     attr_accessor :host, :port
-    attr_reader :default_priority, :default_delay, :default_ttr
+    attr_reader :default_priority, :default_delay, :default_ttr, :default_error_callback
   
     def initialize(opts = nil)
-      @host = opts && opts[:host] || 'localhost'
-      @port = opts && opts[:port] || 11300
-      @tube = opts && opts[:tube]
-      @retry_count = opts && opts[:retry_count] || 5
-      @default_priority = opts && opts[:default_priority] || 65536
-      @default_delay = opts && opts[:default_delay] || 0
-      @default_ttr = opts && opts[:default_ttr] || 300
-      @default_timeout = opts && opts[:timeout] || 5
-    
+      @host                   = opts && opts[:host] || 'localhost'
+      @port                   = opts && opts[:port] || 11300
+      @tube                   = opts && opts[:tube]
+      @retry_count            = opts && opts[:retry_count] || 5
+      @default_priority       = opts && opts[:default_priority] || 65536
+      @default_delay          = opts && opts[:default_delay] || 0
+      @default_ttr            = opts && opts[:default_ttr] || 300
+      @default_timeout        = opts && opts[:timeout] || 5
+      @default_error_callback = opts && opts[:default_error_callback] || Proc.new{ |error| puts "ERROR: #{error.inspect}" }
+      
       @used_tube = 'default'
       @watched_tubes = [@used_tube]
     
@@ -187,17 +191,8 @@ module EM
     end
 
     def add_deferrable(&block)
-      df = EM::DefaultDeferrable.new
-      df.errback do
-        if @error_callback
-          @error_callback.call
-        else
-          puts "ERROR"
-        end
-      end
-    
+      df = Defer.new(default_error_callback, &block)
       @deferrables.push(df)
-      df.callback(&block) if block
       df
     end
 
@@ -206,88 +201,78 @@ module EM
     end
 
     def received(data)
+      puts "received: #{data.inspect}"
       @data << data
-
+      
       until @data.empty?
-        idx = @data.index(/(.*?\r\n)/)
+        idx = @data.index(/(.*?)\r\n/)
         break if idx.nil?
 
         first = $1
       
-        handled = false
-        %w(OUT_OF_MEMORY INTERNAL_ERROR DRAINING BAD_FORMAT
-           UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
-           TIMED_OUT NOT_FOUND).each do |cmd|
-          next unless first =~ /^#{cmd}\r\n/i
-          df = @deferrables.shift
-          df.fail(cmd.downcase.to_sym)
-
-          @data = @data[(cmd.length + 2)..-1]
-          handled = true
-          break
-        end
-        next if handled
-
         case (first)
-        when /^DELETED\r\n/ then
+        when /^DELETED/
           df = @deferrables.shift
           df.succeed
-
-        when /^INSERTED\s+(\d+)\r\n/ then
+        when /^INSERTED\s+(\d+)/
           df = @deferrables.shift
           df.succeed($1.to_i)
-
-        when /^RELEASED\r\n/ then
+        when /^RELEASED/
           df = @deferrables.shift
           df.succeed
-
-        when /^BURIED\s+(\d+)\r\n/ then
+        when /^BURIED\s+(\d+)/
           df = @deferrables.shift
           df.fail(:buried, $1.to_i)
-
-        when /^USING\s+(.*)\r\n/ then
+        when /^USING\s+(.*)/
           df = @deferrables.shift
           df.succeed($1)
-
-        when /^WATCHING\s+(\d+)\r\n/ then
+        when /^WATCHING\s+(\d+)/
           df = @deferrables.shift
           df.succeed($1.to_i)
-
-        when /^OK\s+(\d+)\r\n/ then
+        when /^OK\s+(\d+)/
           bytes = $1.to_i
-
-          body, @data = extract_body(bytes, @data)
-          break if body.nil?
-
-          df = @deferrables.shift
-          df.succeed(YAML.load(body))
-          next
-
-        when /^RESERVED\s+(\d+)\s+(\d+)\r\n/ then
+          if body = extract_body(bytes, @data)
+            @data = body.data
+            df = @deferrables.shift
+            df.succeed(YAML.load(body.body))
+            next
+          else
+            break
+          end
+        when /^RESERVED\s+(\d+)\s+(\d+)/
           id = $1.to_i
           bytes = $2.to_i
-
-          body, @data = extract_body(bytes, @data)
-          break if body.nil?
-
+          if body = extract_body(bytes, @data)
+            @data = body.data
+            df = @deferrables.shift
+            job = EM::Beanstalk::Job.new(self, id, body.body)
+            df.succeed(job)
+            next
+          else
+            break
+          end
+        # error state
+        when /^(OUT_OF_MEMORY|INTERNAL_ERROR|DRAINING|BAD_FORMAT|UNKNOWN_COMMAND|EXPECTED_CRLF|JOB_TOO_BIG|DEADLINE_SOON|TIMED_OUT|NOT_FOUND)/
           df = @deferrables.shift
-          job = EM::Beanstalk::Job.new(self, id, body)
-          df.succeed(job)
-          next
+          df.fail($1.downcase.to_sym)
+          @data = @data[($1.length + 2)..-1]
         else
           break
         end
-        @data.slice!(0, first.size)
+        @data.slice!(0, first.size + 2)
       end
     end
   
     def extract_body(bytes, data)
       rem = data[(data.index(/\r\n/) + 2)..-1]
-      return [nil, data] if rem.length < bytes
-      body = rem[0..(bytes - 1)]
-      data = rem[(bytes + 2)..-1]
-      data = "" if data.nil?
-      [body, data]
+      if rem.length < bytes
+        nil
+      else
+        body = rem[0..(bytes - 1)]
+        data = rem[(bytes + 2)..-1]
+        data = "" if data.nil?
+        Body.new(body, data)
+      end
     end
   end  
 end

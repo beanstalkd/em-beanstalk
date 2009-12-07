@@ -20,6 +20,16 @@ describe EM::Beanstalk, "integration" do
     end
   end
 
+  it 'should use errback' do
+    conn = EM::Beanstalk.new
+    conn.delete(123123) {
+      fail
+    }.error { |err|
+      puts "err! #{err.inspect}"
+      done
+    } 
+  end
+
   it 'should send the "use" command' do
     conn = EM::Beanstalk.new
     conn.use('my-lovely-tube') do 
