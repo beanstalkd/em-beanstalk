@@ -7,7 +7,7 @@ begin
     s.name = "em-beanstalk"
     s.description = s.summary = "EventMachine client for Beanstalkd"
     s.email = "dan@postrank.com"
-    s.homepage = "http://github.com/joshbuddy/em-jack"
+    s.homepage = "http://github.com/joshbuddy/em-beastalk"
     s.authors = ["Dan"]
     s.files = FileList["[A-Z]*", "{lib,spec}/**/*"]
     s.add_dependency 'eventmachine'
