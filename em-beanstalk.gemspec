@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{em-beanstalk}
-  s.version = "0.0.5"
+  s.version = "0.0.6"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Dan"]
-  s.date = %q{2009-12-07}
+  s.date = %q{2009-12-10}
   s.description = %q{EventMachine client for Beanstalkd}
   s.email = %q{dan@postrank.com}
   s.extra_rdoc_files = [
@@ -30,7 +30,7 @@ Gem::Specification.new do |s|
     "spec/spec.opts",
     "spec/spec_helper.rb"
   ]
-  s.homepage = %q{http://github.com/joshbuddy/em-jack}
+  s.homepage = %q{http://github.com/joshbuddy/em-beastalk}
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
   s.rubygems_version = %q{1.3.5}
