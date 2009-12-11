@@ -24,7 +24,7 @@ describe EM::Beanstalk, "integration" do
     conn = EM::Beanstalk.new
     conn.delete(123123) {
       fail
-    }.error { |err|
+    }.on_error { |err|
       puts "err! #{err.inspect}"
       done
     } 

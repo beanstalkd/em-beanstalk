@@ -32,6 +32,7 @@ module EM
       @default_ttr            = opts && opts[:default_ttr] || 300
       @default_timeout        = opts && opts[:timeout] || 5
       @default_error_callback = opts && opts[:default_error_callback] || Proc.new{ |error| puts "ERROR: #{error.inspect}" }
+      @raise_on_disconnect    = opts && opts.key?(:raise_on_disconnect) ? opts[:raise_on_disconnect] : true
       
       @used_tube = 'default'
       @watched_tubes = [@used_tube]
@@ -129,10 +130,10 @@ module EM
   
     def list(type = nil, &block)
       case(type)
-      when :tube, :tubes, nil then @conn.send(:'list-tubes')
-      when :use, :used        then @conn.send(:'list-tube-used')
-      when :watch, :watched   then @conn.send(:'list-tubes-watched')
-      else                         raise EM::Beanstalk::InvalidCommand.new
+      when :tube, :tubes, nil then  @conn.send(:'list-tubes')
+      when :use, :used        then  @conn.send(:'list-tube-used')
+      when :watch, :watched   then  @conn.send(:'list-tubes-watched')
+      else                          raise EM::Beanstalk::InvalidCommand.new
       end
       add_deferrable(&block)
     end
@@ -145,9 +146,9 @@ module EM
     
     def peek(id, &block)
       case id
-      when :ready    then @conn.send(:'peek-ready')
-      when :delayed  then @conn.send(:'peek-delayed')
-      when :buried   then @conn.send(:'peek-buried')
+      when :ready   then  @conn.send(:'peek-ready')
+      when :delayed then  @conn.send(:'peek-delayed')
+      when :buried  then  @conn.send(:'peek-buried')
       else                @conn.send(:'peek', id)
       end
       add_deferrable(&block)
@@ -176,9 +177,9 @@ module EM
       add_deferrable(&block)
     end
 
-    def release(job, &block)
-      return if job.nil?
-      @conn.send(:release, job.jobid, 0, 0)
+    def release(val, &block)
+      return if val.nil?
+      @conn.send(:release, job_id(val), 0, 0)
       add_deferrable(&block)
     end
 
@@ -187,9 +188,9 @@ module EM
     end
 
     def disconnected
-      @deferrables.each {|d| d.fail }
+      @deferrables.each {|d| d.fail(:disconnected) }
       unless @disconnect_manually
-        raise EM::Beanstalk::Disconnected if @retries >= @retry_count
+        raise EM::Beanstalk::Disconnected if @retries >= @retry_count && @raise_on_disconnect
         @retries += 1
         EM.add_timer(1) { reconnect }
       end

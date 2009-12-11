@@ -50,7 +50,7 @@ EM.run {
 
   jack.delete(job_id) {
     puts "deleted job!"
-  }.error {|message|
+  }.on_error {|message|
     puts "I couldn't delete the job because of #{message}"
   }
 }
