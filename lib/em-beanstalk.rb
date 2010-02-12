@@ -48,7 +48,7 @@ module EM
         conn.pending_connect_timeout = @default_timeout
       end
     
-      unless @tube.nil?
+      if @tube
         use(@tube)
         watch(@tube)
       end
