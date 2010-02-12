@@ -177,9 +177,9 @@ module EM
       add_deferrable(&block)
     end
 
-    def release(val, &block)
+    def release(val, opts = nil, &block)
       return if val.nil?
-      @conn.send(:release, job_id(val), 0, 0)
+      @conn.send(:release, job_id(val), priority.to_i, delay.to_i)
       add_deferrable(&block)
     end
 
