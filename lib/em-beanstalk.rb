@@ -25,7 +25,7 @@ module EM
     def initialize(opts = nil)
       @host                   = opts && opts[:host] || 'localhost'
       @port                   = opts && opts[:port] || 11300
-      @tube                   = opts && opts[:tube]
+      @tube                   = opts && opts[:tube] || 'default'
       @retry_count            = opts && opts[:retry_count] || 5
       @default_priority       = opts && opts[:default_priority] || 65536
       @default_delay          = opts && opts[:default_delay] || 0
@@ -34,8 +34,7 @@ module EM
       @default_error_callback = opts && opts[:default_error_callback] || Proc.new{ |error| puts "ERROR: #{error.inspect}" }
       @raise_on_disconnect    = opts && opts.key?(:raise_on_disconnect) ? opts[:raise_on_disconnect] : true
       
-      @used_tube = 'default'
-      @watched_tubes = [@used_tube]
+      @watched_tubes          = []
     
       @data = ""
       @retries = 0
