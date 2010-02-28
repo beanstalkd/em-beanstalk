@@ -5,13 +5,15 @@
 
 Gem::Specification.new do |s|
   s.name = %q{em-beanstalk}
-  s.version = "0.0.6"
+  s.version = "0.0.7"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Dan"]
-  s.date = %q{2009-12-10}
+  s.date = %q{2010-02-28}
+  s.default_executable = %q{beanstalk-shell}
   s.description = %q{EventMachine client for Beanstalkd}
   s.email = %q{dan@postrank.com}
+  s.executables = ["beanstalk-shell"]
   s.extra_rdoc_files = [
     "README.rdoc"
   ]
@@ -24,6 +26,7 @@ Gem::Specification.new do |s|
     "lib/em-beanstalk/connection.rb",
     "lib/em-beanstalk/defer.rb",
     "lib/em-beanstalk/job.rb",
+    "lib/em-beanstalk/shell.rb",
     "spec/connection_spec.rb",
     "spec/integration_spec.rb",
     "spec/job_spec.rb",
