@@ -262,6 +262,7 @@ module EM
           end
         # error state
         when /^(OUT_OF_MEMORY|INTERNAL_ERROR|DRAINING|BAD_FORMAT|UNKNOWN_COMMAND|EXPECTED_CRLF|JOB_TOO_BIG|DEADLINE_SOON|TIMED_OUT|NOT_FOUND)/
+          puts "... got error, calling df."
           df = @deferrables.shift
           df.fail($1.downcase.to_sym)
           @data = @data[($1.length + 2)..-1]

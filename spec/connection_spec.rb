@@ -7,11 +7,15 @@ describe EM::Beanstalk do
   end
 
   it 'should use a default host of "localhost"' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.host.should == 'localhost'
   end
 
   it 'should use a default port of 11300' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.port.should == 11300    
   end
@@ -24,12 +28,16 @@ describe EM::Beanstalk do
 
   it 'should send the "use" command' do
     @connection_mock.should_receive(:send).once.with(:use, "mytube")
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.use("mytube")
   end
 
   it 'should not send the use command to the currently used tube' do
     @connection_mock.should_receive(:send).once.with(:use, "mytube")
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.use("mytube")
     conn.use("mytube")
@@ -37,12 +45,16 @@ describe EM::Beanstalk do
 
   it 'should send the "watch" command' do
     @connection_mock.should_receive(:send).once.with(:watch, "mytube")
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.watch("mytube")
   end
 
   it 'should not send the watch command for a tube currently watched' do
     @connection_mock.should_receive(:send).once.with(:watch, "mytube")
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.watch("mytube")
     conn.watch("mytube")
@@ -52,6 +64,8 @@ describe EM::Beanstalk do
     msg = "my message"
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, msg, anything, anything, anything, msg.length)
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.put(msg)
   end
@@ -59,6 +73,8 @@ describe EM::Beanstalk do
   it 'should default the delay, priority and ttr settings' do
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, anything, 65536, 0, 300, anything)
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.put("msg")
   end
@@ -66,6 +82,8 @@ describe EM::Beanstalk do
   it 'should accept a delay setting' do
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, anything, anything, 42, anything, anything)
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.put("msg", :delay => 42)
   end
@@ -73,6 +91,8 @@ describe EM::Beanstalk do
   it 'should accept a ttr setting' do
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, anything, anything, anything, 999, anything)
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.put("msg", :ttr => 999)
   end
@@ -80,6 +100,8 @@ describe EM::Beanstalk do
   it 'should accept a priority setting' do
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, anything, 233, anything, anything, anything)
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.put("msg", :priority => 233)
   end
@@ -87,11 +109,15 @@ describe EM::Beanstalk do
   it 'shoudl accept a priority, delay and ttr setting' do
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, anything, 99, 42, 2000, anything)
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     conn.put("msg", :priority => 99, :delay => 42, :ttr => 2000)
   end
 
   it 'should force delay to be >= 0' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, anything, anything, 0, anything, anything)
     conn = EM::Beanstalk.new
@@ -99,6 +125,8 @@ describe EM::Beanstalk do
   end
 
   it 'should force ttr to be >= 0' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, anything, anything, anything, 300, anything)
     conn = EM::Beanstalk.new
@@ -106,6 +134,8 @@ describe EM::Beanstalk do
   end
 
   it 'should force priority to be >= 0' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, anything, 65536, anything, anything, anything)
     conn = EM::Beanstalk.new
@@ -113,6 +143,8 @@ describe EM::Beanstalk do
   end
 
   it 'should force priority to be < 2**32' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, anything, (2 ** 32), anything, anything, anything)
     conn = EM::Beanstalk.new
@@ -121,6 +153,8 @@ describe EM::Beanstalk do
 
   it 'should handle a non-string provided as the put message' do
     msg = 22
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send_with_data).once.
                       with(:put, msg.to_s, anything, anything, anything, msg.to_s.length)
     conn = EM::Beanstalk.new
@@ -128,6 +162,8 @@ describe EM::Beanstalk do
   end
 
   it 'should send the "delete" command' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send).once.with(:delete, 1)
     job = EM::Beanstalk::Job.new(nil, 1, "body")
     conn = EM::Beanstalk.new
@@ -135,18 +171,24 @@ describe EM::Beanstalk do
   end
 
   it 'should handle a nil job sent to the "delete" command' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_not_receive(:send).with(:delete, nil)
     conn = EM::Beanstalk.new
     conn.delete(nil)
   end
 
   it 'should send the "reserve" command' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send).with(:reserve)
     conn = EM::Beanstalk.new
     conn.reserve
   end
 
   it 'should raise exception if reconnect fails more then RETRY_COUNT times' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     EM.should_receive(:add_timer).exactly(5).times
 
     conn = EM::Beanstalk.new
@@ -155,6 +197,8 @@ describe EM::Beanstalk do
   end
 
   it 'should reset the retry count on connection' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     EM.should_receive(:add_timer).at_least(1).times
 
     conn = EM::Beanstalk.new
@@ -167,16 +211,20 @@ describe EM::Beanstalk do
      UNKNOWN_COMMAND EXPECTED_CRLF JOB_TOO_BIG DEADLINE_SOON
      TIMED_OUT NOT_FOUND).each do |cmd|
     it "should handle #{cmd} messages" do
-       conn = EM::Beanstalk.new
+      @connection_mock.should_receive(:send).once.with(:use, "default")
+      @connection_mock.should_receive(:send).once.with(:watch, "default")
+      conn = EM::Beanstalk.new
 
-       df = conn.add_deferrable
-       df.should_receive(:fail).with(cmd.downcase.to_sym)
+      df = conn.add_deferrable
+      df.should_receive(:fail).with(cmd.downcase.to_sym)
 
-       conn.received("#{cmd}\r\n")
-     end
+      conn.received("#{cmd}\r\n")
+    end
   end
 
   it 'should handle deleted messages' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
 
     df = conn.add_deferrable
@@ -186,6 +234,8 @@ describe EM::Beanstalk do
   end
 
   it 'should handle inserted messages' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
 
     df = conn.add_deferrable
@@ -195,6 +245,8 @@ describe EM::Beanstalk do
   end
 
   it 'should handle buried messages' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
 
     df = conn.add_deferrable
@@ -204,6 +256,8 @@ describe EM::Beanstalk do
   end
 
   it 'should handle using messages' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
 
     df = conn.add_deferrable
@@ -213,6 +267,8 @@ describe EM::Beanstalk do
   end
 
   it 'should handle watching messages' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
 
     df = conn.add_deferrable
@@ -222,6 +278,8 @@ describe EM::Beanstalk do
   end
 
   it 'should handle reserved messages' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
 
     msg = "This is my message"
@@ -237,6 +295,8 @@ describe EM::Beanstalk do
   end
 
   it 'should handle receiving multiple replies in one packet' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
 
     df = conn.add_deferrable
@@ -249,6 +309,8 @@ describe EM::Beanstalk do
   end
 
   it 'should handle receiving data in chunks' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
     
     msg1 = "First half of the message\r\n"
@@ -264,12 +326,16 @@ describe EM::Beanstalk do
   end
   
   it 'should send the stat command' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send).once.with(:stats)
     conn = EM::Beanstalk.new
     conn.stats
   end
 
   it 'should handle receiving the OK command' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     conn = EM::Beanstalk.new
 
     msg =<<-HERE
@@ -300,42 +366,56 @@ HERE
   it 'should support job stats' do
     job = EM::Beanstalk::Job.new(nil, 42, "blah")
 
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send).once.with(:'stats-job', 42)
     conn = EM::Beanstalk.new
     conn.stats(:job, job)
   end
 
   it 'should support tube stats' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send).once.with(:'stats-tube', "mytube")
     conn = EM::Beanstalk.new
     conn.stats(:tube, "mytube")
   end
 
   it 'should throw exception on invalid stats command' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_not_receive(:send)
     conn = EM::Beanstalk.new
     lambda { conn.stats(:blah) }.should raise_error(EM::Beanstalk::InvalidCommand)
   end
 
   it 'should support listing tubes' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send).once.with(:'list-tubes')
     conn = EM::Beanstalk.new
     conn.list
   end
 
   it 'should support listing tube used' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send).once.with(:'list-tube-used')
     conn = EM::Beanstalk.new
     conn.list(:used)
   end
 
   it 'should support listing tubes watched' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_receive(:send).once.with(:'list-tubes-watched')
     conn = EM::Beanstalk.new
     conn.list(:watched)
   end
 
   it 'should throw exception on invalid list command' do
+    @connection_mock.should_receive(:send).once.with(:use, "default")
+    @connection_mock.should_receive(:send).once.with(:watch, "default")
     @connection_mock.should_not_receive(:send)
     conn = EM::Beanstalk.new
     lambda { conn.list(:blah) }.should raise_error(EM::Beanstalk::InvalidCommand)
