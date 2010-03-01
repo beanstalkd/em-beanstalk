@@ -5,11 +5,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{em-beanstalk}
-  s.version = "0.0.7"
+  s.version = "0.0.8"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Dan"]
-  s.date = %q{2010-02-28}
+  s.date = %q{2010-03-01}
   s.default_executable = %q{beanstalk-shell}
   s.description = %q{EventMachine client for Beanstalkd}
   s.email = %q{dan@postrank.com}
