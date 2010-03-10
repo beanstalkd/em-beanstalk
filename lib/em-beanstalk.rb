@@ -25,7 +25,7 @@ module EM
     def initialize(opts = nil)
       @host                   = opts && opts[:host] || 'localhost'
       @port                   = opts && opts[:port] || 11300
-      @tube                   = opts && opts.key?(:tube) ? opts[:tube] : 'default'
+      @tube                   = opts && opts[:tube] || 'default'
       @retry_count            = opts && opts[:retry_count] || 5
       @default_priority       = opts && opts[:default_priority] || 65536
       @default_delay          = opts && opts[:default_delay] || 0
