@@ -179,6 +179,8 @@ module EM
 
     def release(val, opts = nil, &block)
       return if val.nil?
+      delay = opts && opts[:delay] || default_delay
+      priority = opts && opts[:priority] || default_priority
       @conn.send(:release, job_id(val), priority.to_i, delay.to_i)
       add_deferrable(&block)
     end

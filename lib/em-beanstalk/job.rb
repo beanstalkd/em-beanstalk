@@ -20,6 +20,10 @@ module EM
         conn.delete(self, &block)
       end
     
+      def release(delay = 0, &block)
+        conn.release(self, :delay => delay, :priority => priority, &block)
+      end
+    
       def stats(&block)
         conn.stats(:job, self, &block)
       end
