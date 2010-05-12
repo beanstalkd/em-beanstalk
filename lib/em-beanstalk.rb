@@ -104,6 +104,7 @@ module EM
           block.call(job)
           EM.next_tick { work.call }
         end
+        r
       end
       work.call
     end
